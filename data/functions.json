@@ -8035,25 +8035,25 @@
   },
   "OKS_fnc_Lambs_SpawnGroup": {
     "category": "OKS_Spawn_Lambs",
-    "description": "Spawns an infantry group or crewed vehicle and assigns a LAMBS task (hunt, creep, attack, rush, ambush).",
+    "description": "Spawns an infantry group or crewed vehicle and assigns a LAMBS task. Type options: 'hunt' (taskHunt, immediate), 'creep' (stealth approach then taskCreep), 'attack' (SAD waypoint toward nearest player), 'rush' (default, taskRush immediately), 'ambushattack' (wait for contact then SAD), 'ambushrush' (wait for contact then taskRush), 'ambushhunt' (wait for contact then taskHunt), 'ambushcqb' (garrison + wait for contact then taskRush).",
     "params": [
       {
         "name": "_SpawnPos",
         "type": "Object or Array",
         "default": "",
-        "description": "Spawn position object or [x,y,z] array"
+        "description": "Spawn position — either an object (uses getDir/getPosATL) or an [x,y,z] position array"
       },
       {
         "name": "_LambsType",
         "type": "String",
         "default": "",
-        "description": "LAMBS task type: hunt, creep, attack, rush, ambush"
+        "description": "LAMBS task type. Valid values: \"hunt\", \"creep\", \"attack\", \"rush\", \"ambushattack\", \"ambushrush\", \"ambushhunt\", \"ambushcqb\". Unrecognized values fall back to rush."
       },
       {
         "name": "_InfantryCountOrVehicleArray",
         "type": "Number or Array",
         "default": "5",
-        "description": "Infantry count or [vehicleClassnames, cargoCount]"
+        "description": "Infantry count (Number) OR vehicle array ([[vehicleClassnames], CrewSelect, CargoCount]). CrewSelect: 0=full crew, 1=driver only, 2=gunner only, 3=commander only. CargoCount = infantry in cargo."
       },
       {
         "name": "_Side",
@@ -8065,17 +8065,17 @@
         "name": "_Range",
         "type": "Number",
         "default": "1500",
-        "description": "Tracking and ambush trigger range"
+        "description": "Tracking range for LAMBS tasks and ambush trigger range"
       },
       {
         "name": "_Array",
         "type": "Array",
         "default": "[]",
-        "description": "Array to accumulate spawned units"
+        "description": "Accumulator array — spawned units are pushed into this array and publicVariable'd"
       }
     ],
-    "returns": "",
-    "usage": "[SpawnPos,\"rush\",UnitsPerBase,Side,Range,[]] spawn OKS_fnc_Lambs_SpawnGroup",
+    "returns": "Group — the spawned group",
+    "usage": "[SpawnPos,\"hunt\",6,east,800,[]] spawn OKS_fnc_Lambs_SpawnGroup\n[SpawnPos,\"ambushcqb\",8,east,500,[]] spawn OKS_fnc_Lambs_SpawnGroup\n[SpawnPos,\"rush\",[[\"B_APC_Tracked_01_rcws_F\"],0,4],east,1000,[]] spawn OKS_fnc_Lambs_SpawnGroup",
     "docs": ""
   },
   "OKS_fnc_Lambs_Wavespawn_Code": {
@@ -10610,6 +10610,132 @@
     "returns": "",
     "usage": "",
     "docs": ""
+  },
+  "OKS_fnc_InterceptHvtTask": {
+    "category": "OKS_Tasks",
+    "description": "Spawns an HVT with guard detail, delays departure, mounts into a vehicle if possible, and creates an intercept task. Supports capture or capture-or-kill mode and optional extraction-site completion.",
+    "params": [
+      {
+        "name": "_spawnPos",
+        "type": "Array|Object",
+        "default": "[0,0,0]",
+        "description": "HVT anchor spawn position. HVT spawns exactly here; guards may be placed in nearest building."
+      },
+      {
+        "name": "_endPos",
+        "type": "Array|Object",
+        "default": "[0,0,0]",
+        "description": "Destination used for movement and end behavior."
+      },
+      {
+        "name": "_side",
+        "type": "Side|Array",
+        "default": "east",
+        "description": "Either one side for both elements or [hvtSide, guardSide]. Sides must be friendly."
+      },
+      {
+        "name": "_endBehavior",
+        "type": "String",
+        "default": "\"DISAPPEAR\"",
+        "description": "End behavior at destination: \"DISAPPEAR\" or \"GARRISON\"."
+      },
+      {
+        "name": "_designatedVehicle",
+        "type": "Object",
+        "default": "objNull",
+        "description": "Optional transport vehicle. If null/invalid, a nearby valid vehicle is selected."
+      },
+      {
+        "name": "_delay",
+        "type": "Number|Array",
+        "default": "180",
+        "description": "Seconds before departure, or [min,max] random range."
+      },
+      {
+        "name": "_guardData",
+        "type": "Array",
+        "default": "[6, 35]",
+        "description": "[guardCount, surrenderThresholdPercent]. Threshold percent controls HVT surrender trigger."
+      },
+      {
+        "name": "_taskData",
+        "type": "Array",
+        "default": "[true, \"\", true]",
+        "description": "[showTaskPosition, taskParentId, showVehicleTypeInDescription]."
+      },
+      {
+        "name": "_failOnKill",
+        "type": "Boolean|String",
+        "default": "true",
+        "description": "Primary mode bool: true = capture only (HVT death fails), false = capture-or-kill (HVT death succeeds). Legacy strings supported: \"CAPTURE\", \"CAPTUREORKILL\", \"KILL\"."
+      },
+      {
+        "name": "_extractionSite",
+        "type": "Nil|Array|Object",
+        "default": "nil",
+        "description": "Optional extraction endpoint. If set, task completes only when surrendered HVT is on foot within 50m of extraction."
+      }
+    ],
+    "returns": "OBJECT - Spawned HVT unit, or objNull on failure",
+    "usage": "[getPosATL SpawnLogic, getPosATL EndLogic, [east,east], \"GARRISON\", objNull, [120,240], [8,30], [true,\"MainTask\",true], true, nil] call OKS_fnc_InterceptHvtTask",
+    "docs": ""
+  },
+  "OKS_fnc_ReplaceUnitGear": {
+    "category": "OKS_Enemy",
+    "description": "Replaces unit gear without recreating the unit. Supports partial gear updates, container item preservation, safe linked item replacement, weapon magazine shortcuts, and optional face/name/identity/rank update.",
+    "params": [
+      {
+        "name": "_unit",
+        "type": "Object",
+        "default": "objNull",
+        "description": "OBJECT - Target AI/man unit. Returns false if null or dead."
+      },
+      {
+        "name": "_gearSpec",
+        "type": "HashMap|Array",
+        "default": "createHashMap",
+        "description": "HASHMAP/ARRAY - Gear definition. Supported keys: uniform, vest, backpack, headgear, goggles, nvg, primaryWeapon, primaryWeaponItems[], primaryWeaponMags, primaryWeaponMag, primaryWeaponMagCount, handgunWeapon, handgunItems[], handgunMags, handgunMag, handgunMagCount, binocular, linkedItems[]."
+      },
+      {
+        "name": "_preserveItems",
+        "type": "Boolean",
+        "default": "true",
+        "description": "BOOL - If true, old uniform/vest/backpack contents are re-added to new containers; overflow drops on ground in nearby weapon holder."
+      },
+      {
+        "name": "_clearMagazines",
+        "type": "Boolean",
+        "default": "false",
+        "description": "BOOL - If true, removes all currently carried magazines before applying new loadout mags."
+      },
+      {
+        "name": "_face",
+        "type": "String",
+        "default": "\"\"",
+        "description": "STRING - Optional face class to apply after gear replacement (e.g. \"PersianHead_A3_01\"). Empty string keeps current face."
+      },
+      {
+        "name": "_name",
+        "type": "String",
+        "default": "\"\"",
+        "description": "STRING - Optional display name to apply after gear replacement. Empty string keeps current name."
+      },
+      {
+        "name": "_identity",
+        "type": "String",
+        "default": "\"\"",
+        "description": "STRING - Optional CfgIdentities class. Applied first, then optional face/name overrides are applied. Empty string keeps current identity."
+      },
+      {
+        "name": "_rank",
+        "type": "String",
+        "default": "\"\"",
+        "description": "STRING - Optional rank override. Valid values: PRIVATE, CORPORAL, SERGEANT, LIEUTENANT, CAPTAIN, MAJOR, COLONEL. Empty string keeps current rank."
+      }
+    ],
+    "returns": "BOOL - true on success, false on invalid unit",
+    "usage": "[unit, gearSpec, true, false, \"\", \"\", \"\", \"\"] call OKS_fnc_ReplaceUnitGear",
+    "docs": "HashMap examples:\n\n1) Full loadout with explicit mag count + custom name/rank:\nprivate _gear = createHashMapFromArray [[\"uniform\",\"U_O_OfficerUniform_ocamo\"],[\"vest\",\"V_TacVest_khk\"],[\"backpack\",\"B_FieldPack_oli\"],[\"headgear\",\"H_Beret_blk\"],[\"goggles\",\"G_Aviator\"],[\"nvg\",\"NVGoggles_OPFOR\"],[\"primaryWeapon\",\"arifle_Katiba_F\"],[\"primaryWeaponItems\",[\"acc_pointer_IR\",\"optic_ACO_grn\"]],[\"primaryWeaponMag\",\"30Rnd_65x39_caseless_green\"],[\"primaryWeaponMagCount\",6],[\"handgunWeapon\",\"hgun_Rook40_F\"],[\"handgunMags\",3],[\"binocular\",\"Binocular\"],[\"linkedItems\",[\"ItemMap\",\"ItemCompass\",\"ItemWatch\",\"ItemRadio\",\"ItemGPS\",\"NVGoggles_OPFOR\"]]];\n[unit, _gear, true, false, \"\", \"Colonel Abbas Haddad\", \"\", \"COLONEL\"] call OKS_fnc_ReplaceUnitGear;\n\n2) Container-only swap while preserving old contents:\n[unit, createHashMapFromArray [[\"uniform\",\"U_I_CombatUniform\"],[\"vest\",\"V_PlateCarrier1_rgr\"],[\"backpack\",\"B_AssaultPack_rgr\"]], true, false, \"\", \"\", \"\", \"\"] call OKS_fnc_ReplaceUnitGear;\n\n3) Weapon-only + NVG with integer mag shortcut + face/rank override:\n[unit, createHashMapFromArray [[\"nvg\",\"NVGoggles_INDEP\"],[\"primaryWeapon\",\"arifle_MX_F\"],[\"primaryWeaponItems\",[\"acc_flashlight\",\"optic_Hamr\"]],[\"primaryWeaponMags\",6],[\"handgunWeapon\",\"hgun_P07_F\"],[\"handgunMags\",2]], true, false, \"PersianHead_A3_01\", \"\", \"\", \"CAPTAIN\"] call OKS_fnc_ReplaceUnitGear;\n\nMagazine formats:\n- primaryWeaponMags/handgunMags = NUMBER (first compatible mag x count)\n- primaryWeaponMags/handgunMags = [\"MagClass\", count]\n- primaryWeaponMags/handgunMags = [\"MagClassA\",\"MagClassB\", ...]\n- explicit pair keys: primaryWeaponMag + primaryWeaponMagCount, handgunMag + handgunMagCount\n\nIdentity order:\n- _identity is applied first\n- _face and _name are applied after identity as overrides\n- _rank is applied last"
   },
   "GW_Common_fnc_spawnGroup": {
     "category": "GW_Common",
