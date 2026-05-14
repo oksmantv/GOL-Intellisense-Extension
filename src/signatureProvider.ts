@@ -22,8 +22,8 @@ export class OksSqfSignatureHelpProvider implements vscode.SignatureHelpProvider
         _token: vscode.CancellationToken,
         _context: vscode.SignatureHelpContext
     ): vscode.ProviderResult<vscode.SignatureHelp> {
-        // Collect text from current line and a few lines ahead to find the call/spawn
-        const maxLookAhead = 5;
+        // Collect text from current line and enough lines ahead to find long multiline call/spawn blocks
+        const maxLookAhead = 50;
         const lineNum = position.line;
         const endLine = Math.min(lineNum + maxLookAhead, document.lineCount - 1);
 
@@ -37,7 +37,7 @@ export class OksSqfSignatureHelpProvider implements vscode.SignatureHelpProvider
 
         // Also scan backwards to find the opening bracket
         let textBeforeCursor = '';
-        const lookBack = Math.max(0, lineNum - 15);
+        const lookBack = Math.max(0, lineNum - 50);
         for (let i = lookBack; i <= lineNum; i++) {
             if (i === lineNum) {
                 textBeforeCursor += document.lineAt(i).text.substring(0, position.character);

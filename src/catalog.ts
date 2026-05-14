@@ -128,9 +128,18 @@ export function buildHoverMarkdown(name: string, entry: FunctionEntry): string {
         lines.push('');
     }
 
-    // Docs link
+    // Docs (support both URL links and inline notes)
     if (entry.docs) {
-        lines.push(`[📖 View Documentation](${entry.docs})`);
+        lines.push('');
+        const docs = entry.docs.trim();
+        if (/^https?:\/\//i.test(docs)) {
+            lines.push(`[View Documentation](${docs})`);
+        } else {
+            lines.push('**Notes:**');
+            lines.push('```text');
+            lines.push(docs);
+            lines.push('```');
+        }
     }
 
     return lines.join('\n');

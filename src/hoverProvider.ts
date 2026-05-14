@@ -48,8 +48,8 @@ export class OksSqfHoverProvider implements vscode.HoverProvider {
         document: vscode.TextDocument,
         position: vscode.Position
     ): vscode.Hover | undefined {
-        // Gather text before cursor (scan up to 15 lines back)
-        const lookBack = Math.max(0, position.line - 15);
+        // Gather text before cursor (scan up to 50 lines back)
+        const lookBack = Math.max(0, position.line - 50);
         let textBeforeCursor = '';
         for (let i = lookBack; i <= position.line; i++) {
             if (i === position.line) {
@@ -69,8 +69,8 @@ export class OksSqfHoverProvider implements vscode.HoverProvider {
             return undefined;
         }
 
-        // Gather text after cursor (scan up to 10 lines forward)
-        const lookAhead = Math.min(position.line + 10, document.lineCount - 1);
+        // Gather text after cursor (scan up to 50 lines forward)
+        const lookAhead = Math.min(position.line + 50, document.lineCount - 1);
         let textAfterCursor = document.lineAt(position.line).text.substring(position.character);
         for (let i = position.line + 1; i <= lookAhead; i++) {
             textAfterCursor += '\n' + document.lineAt(i).text;
