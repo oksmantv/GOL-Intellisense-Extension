@@ -9627,10 +9627,22 @@
         "type": "Boolean",
         "default": "true",
         "description": "Whether collecting all intel auto-completes the intel task"
+      },
+      {
+        "name": "_MarkerArray",
+        "type": "Array",
+        "default": "[]",
+        "description": "ARRAY - Marker names to hide on start (alpha 0) and reveal on task completion (alpha 1)"
+      },
+      {
+        "name": "_ShowTaskPosition",
+        "type": "Boolean",
+        "default": "true",
+        "description": "BOOL - Show the intel position as a task map marker while ASSIGNED. Set false when the intel is on a vehicle that hasn't moved yet to avoid revealing its location"
       }
     ],
     "returns": "",
-    "usage": "[intel_1,nil,nil,\"Testing Testing Testing\\n\\nTesting Testing Testing\\nSigned Hello\",\"Special Intel\",nil,false] spawn OKS_fnc_SetupIntel",
+    "usage": "[intel_1,nil,nil,\"Testing Testing Testing\\n\\nTesting Testing Testing\\nSigned Hello\",\"Special Intel\",nil,true,[],false] spawn OKS_fnc_SetupIntel",
     "docs": ""
   },
   "OKS_fnc_Task_Settings": {
@@ -10654,8 +10666,8 @@
       {
         "name": "_guardData",
         "type": "Array",
-        "default": "[6, 35]",
-        "description": "[guardCount, surrenderThresholdPercent]. Threshold percent controls HVT surrender trigger."
+        "default": "[6, 35, 50]",
+        "description": "[guardCount, surrenderThresholdPercent, convoySpeedKmh]. Threshold percent controls HVT surrender trigger. convoySpeedKmh limits the convoy driving speed (forceSpeed); 0 = unlimited."
       },
       {
         "name": "_taskData",
@@ -10677,7 +10689,136 @@
       }
     ],
     "returns": "OBJECT - Spawned HVT unit, or objNull on failure",
-    "usage": "[getPosATL SpawnLogic, getPosATL EndLogic, [east,east], \"GARRISON\", objNull, [120,240], [8,30], [true,\"MainTask\",true], true, nil] call OKS_fnc_InterceptHvtTask",
+    "usage": "[getPosATL SpawnLogic, getPosATL EndLogic, [east,east], \"GARRISON\", objNull, [120,240], [8,30,60], [true,\"MainTask\",true], true, nil] call OKS_fnc_InterceptHvtTask",
+    "docs": ""
+  },
+  "OKS_fnc_RescueSurvivorTask": {
+    "category": "OKS_Tasks",
+    "description": "Progressive single-casualty ACE medical rescue task. Phase 1 — 'Find [name]': task created with no map position if showTaskPosition=false. Phase 2 — 'Rescue [name]': subtask created when any player is within 100m, position always revealed at this point, ACE medical damage applied. Phase 3 — 'Extract [name]': created after rescue only if extractionSite is set; otherwise main task completes. Sets OKS_IsRescued=true on full success, OKS_IsDead=true on failure. Hook outcomes via waitUntil on these unit variables.",
+    "params": [
+      {
+        "name": "_casualty",
+        "type": "Object|Array",
+        "default": "objNull",
+        "description": "Pre-placed unit object, OR [position, classname] array to spawn the unit automatically."
+      },
+      {
+        "name": "_severity",
+        "type": "String",
+        "default": "\"lot\"",
+        "description": "Medical severity passed to OKS_fnc_MedicalDamage. One of: \"lot\" (Tier 2), \"large\" (Tier 2 critical), \"fatal\" (Tier 1 / cardiac arrest)."
+      },
+      {
+        "name": "_taskData",
+        "type": "Array",
+        "default": "[true, \"\"]",
+        "description": "[showTaskPosition (BOOL), taskParentId (STRING)]. false = no marker or map position shown until a player is within 100m. true = marker and destination shown from the start. taskParentId nests under a parent task, or \"\" for standalone."
+      },
+      {
+        "name": "_extractionSite",
+        "type": "Nil|Array|Object",
+        "default": "nil",
+        "description": "Optional extraction endpoint. If defined, an Extract sub-task is added after rescue. Casualty must be within 50m of this position to complete."
+      },
+      {
+        "name": "_guardData",
+        "type": "Nil|Array",
+        "default": "nil",
+        "description": "Optional enemy guards. [guardCount (NUMBER), guardSide (SIDE)]. Spawns a guard group near the casualty using OKS_fnc_Task_Settings classnames."
+      }
+    ],
+    "returns": "Nothing — hook outcomes via waitUntil on unit variables: OKS_IsRescued (true = rescued) or OKS_IsDead (true = failed/dead).",
+    "usage": "[casualty_1, \"fatal\", [false, \"\"], nil, nil] spawn OKS_fnc_RescueSurvivorTask",
+    "docs": ""
+  },
+    "params": [
+      {
+        "name": "_casualty",
+        "type": "Object|Array",
+        "default": "objNull",
+        "description": "Pre-placed unit object, OR [position, classname] array to spawn the unit automatically."
+      },
+      {
+        "name": "_severity",
+        "type": "String",
+        "default": "\"lot\"",
+        "description": "Medical severity passed to OKS_fnc_MedicalDamage. One of: \"lot\" (Tier 2), \"large\" (Tier 2 critical), \"fatal\" (Tier 1 / cardiac arrest)."
+      },
+      {
+        "name": "_taskData",
+        "type": "Array",
+        "default": "[true, \"\"]",
+        "description": "[showTaskPosition (BOOL), taskParentId (STRING)]. showTaskPosition controls whether the casualty destination marker is shown on the map. taskParentId nests this task under a parent task, or \"\" for standalone."
+      },
+      {
+        "name": "_extractionSite",
+        "type": "Nil|Array|Object",
+        "default": "nil",
+        "description": "Optional extraction endpoint. If defined, an Extract sub-task is added after stabilization. Casualty must be within 50m of this position to complete."
+      },
+      {
+        "name": "_guardData",
+        "type": "Nil|Array",
+        "default": "nil",
+        "description": "Optional enemy guards. [guardCount (NUMBER), guardSide (SIDE)]. Spawns a guard group near the casualty using OKS_fnc_Task_Settings classnames."
+      }
+    ],
+    "returns": "Nothing — hook outcomes via waitUntil on unit variables: OKS_IsRescued (true = rescued) or OKS_IsDead (true = failed/dead).",
+    "usage": "[casualty_1, \"fatal\", [true, \"\"], nil, nil] spawn OKS_fnc_RescueSurvivorTask",
+    "docs": ""
+  },
+  "OKS_fnc_RescueSurvivor_MedCheck": {
+    "category": "OKS_Tasks",
+    "description": "Internal helper spawned by OKS_fnc_RescueSurvivorTask. Monitors a casualty's ACE medical state and sets the stabilize sub-task to SUCCEEDED when cardiac output is restored, blood loss stops, and all tourniquets are removed. Sets FAILED if the casualty dies.",
+    "params": [
+      {
+        "name": "_casualty",
+        "type": "Object",
+        "default": "objNull",
+        "description": "The unit being monitored."
+      },
+      {
+        "name": "_taskId",
+        "type": "String",
+        "default": "\"\"",
+        "description": "The stabilize sub-task ID to resolve."
+      }
+    ],
+    "returns": "Nothing",
+    "usage": "[casualty_1, \"OKS_RESCUETASK_12345_STABILIZE\"] spawn OKS_fnc_RescueSurvivor_MedCheck",
+    "docs": ""
+  },
+  "OKS_fnc_RescueSurvivor_ExtractMonitor": {
+    "category": "OKS_Tasks",
+    "description": "Internal helper spawned by OKS_fnc_RescueSurvivorTask. Monitors a stabilized casualty's position and sets the extraction sub-task to SUCCEEDED once the casualty is within range of the extraction site, regardless of how they were moved there.",
+    "params": [
+      {
+        "name": "_casualty",
+        "type": "Object",
+        "default": "objNull",
+        "description": "The unit being monitored."
+      },
+      {
+        "name": "_extractPos",
+        "type": "Array",
+        "default": "[0,0,0]",
+        "description": "Destination position [x, y, z]."
+      },
+      {
+        "name": "_taskId",
+        "type": "String",
+        "default": "\"\"",
+        "description": "The extraction sub-task ID to resolve."
+      },
+      {
+        "name": "_range",
+        "type": "Number",
+        "default": "50",
+        "description": "Acceptance radius in metres."
+      }
+    ],
+    "returns": "Nothing",
+    "usage": "[casualty_1, getPos extract_1, \"OKS_RESCUETASK_12345_EXTRACT\", 50] spawn OKS_fnc_RescueSurvivor_ExtractMonitor",
     "docs": ""
   },
   "OKS_fnc_ReplaceUnitGear": {
