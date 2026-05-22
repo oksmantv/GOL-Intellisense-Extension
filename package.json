@@ -2,7 +2,7 @@
   "name": "oks-sqf",
   "displayName": "OKS SQF — GOL Framework IntelliSense",
   "description": "Hover tooltips, parametnger hints, and autocomplete for OKS/GOL SQF framework functions.",
-  "version": "0.1.4",
+  "version": "0.1.8",
   "publisher": "oksmantv",
   "license": "SEE LICENSE IN LICENSE",
   "icon": "Hellfish.png",

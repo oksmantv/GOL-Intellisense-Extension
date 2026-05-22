@@ -7013,10 +7013,17 @@
         "type": "String or Boolean",
         "default": "\"alternate\"",
         "description": "Parking mode: alternate, successive, convoystop, offroad (legacy bool supported)"
+      },
+      {
+        "name": "_TaskArray",
+        "type": "Array",
+        "default": "nil",
+        "description": "Optional convoy task: [taskParent (string), showPosition (bool), showNotification (bool), taskCondition (string: 'destroy'|'intercept')]. Omit or pass nil for no task."
       }
     ],
     "returns": "",
-    "usage": "[convoy_1,convoy_2,convoy_3,east,[4,[\"rhs_btr60_msv\"], 6, 25],[true,6],[], false, false] spawn OKS_fnc_Convoy_Spawn",
+    "returns": "String — Pre-generated BIS task ID when param 12 (_TaskArray) is provided, \"\" otherwise. Task is created in the convoy execution thread once vehicles spawn. Call with: private _taskId = [convoy_1,...] call OKS_fnc_Convoy_Spawn; then poll: waitUntil { sleep 5; taskState _taskId in [\"SUCCEEDED\",\"FAILED\"] }; taskState returns \"\" until the task is created — safe to poll from the start. Old spawn calls remain backward compatible (return value discarded).",
+    "usage": "private _taskId = [convoy_1,convoy_2,convoy_3,east,[4,[\"rhs_btr60_msv\"], 6, 25],[true,6],[], false, false, [\"rush\"], \"alternate\", [\"\", true, true, \"destroy\"]] call OKS_fnc_Convoy_Spawn",
     "docs": ""
   },
   "OKS_fnc_Convoy_AAMergeGapHandler": {
@@ -10672,8 +10679,8 @@
       {
         "name": "_taskData",
         "type": "Array",
-        "default": "[true, \"\", true]",
-        "description": "[showTaskPosition, taskParentId, showVehicleTypeInDescription]."
+        "default": "[true, \"\", true, \"\"]",
+        "description": "[showTaskPosition, taskParentId, showVehicleTypeInDescription, hvtProfileImagePath]. hvtProfileImagePath is an optional portrait image path used in the HVT profile card."
       },
       {
         "name": "_failOnKill",
@@ -10689,7 +10696,7 @@
       }
     ],
     "returns": "OBJECT - Spawned HVT unit, or objNull on failure",
-    "usage": "[getPosATL SpawnLogic, getPosATL EndLogic, [east,east], \"GARRISON\", objNull, [120,240], [8,30,60], [true,\"MainTask\",true], true, nil] call OKS_fnc_InterceptHvtTask",
+    "usage": "[getPosATL SpawnLogic, getPosATL EndLogic, [east,east], \"GARRISON\", objNull, [120,240], [8,30,60], [true,\"MainTask\",true,\"\"], true, nil] call OKS_fnc_InterceptHvtTask",
     "docs": ""
   },
   "OKS_fnc_RescueSurvivorTask": {
@@ -10729,42 +10736,6 @@
     ],
     "returns": "Nothing — hook outcomes via waitUntil on unit variables: OKS_IsRescued (true = rescued) or OKS_IsDead (true = failed/dead).",
     "usage": "[casualty_1, \"fatal\", [false, \"\"], nil, nil] spawn OKS_fnc_RescueSurvivorTask",
-    "docs": ""
-  },
-    "params": [
-      {
-        "name": "_casualty",
-        "type": "Object|Array",
-        "default": "objNull",
-        "description": "Pre-placed unit object, OR [position, classname] array to spawn the unit automatically."
-      },
-      {
-        "name": "_severity",
-        "type": "String",
-        "default": "\"lot\"",
-        "description": "Medical severity passed to OKS_fnc_MedicalDamage. One of: \"lot\" (Tier 2), \"large\" (Tier 2 critical), \"fatal\" (Tier 1 / cardiac arrest)."
-      },
-      {
-        "name": "_taskData",
-        "type": "Array",
-        "default": "[true, \"\"]",
-        "description": "[showTaskPosition (BOOL), taskParentId (STRING)]. showTaskPosition controls whether the casualty destination marker is shown on the map. taskParentId nests this task under a parent task, or \"\" for standalone."
-      },
-      {
-        "name": "_extractionSite",
-        "type": "Nil|Array|Object",
-        "default": "nil",
-        "description": "Optional extraction endpoint. If defined, an Extract sub-task is added after stabilization. Casualty must be within 50m of this position to complete."
-      },
-      {
-        "name": "_guardData",
-        "type": "Nil|Array",
-        "default": "nil",
-        "description": "Optional enemy guards. [guardCount (NUMBER), guardSide (SIDE)]. Spawns a guard group near the casualty using OKS_fnc_Task_Settings classnames."
-      }
-    ],
-    "returns": "Nothing — hook outcomes via waitUntil on unit variables: OKS_IsRescued (true = rescued) or OKS_IsDead (true = failed/dead).",
-    "usage": "[casualty_1, \"fatal\", [true, \"\"], nil, nil] spawn OKS_fnc_RescueSurvivorTask",
     "docs": ""
   },
   "OKS_fnc_RescueSurvivor_MedCheck": {
