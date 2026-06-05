@@ -120,6 +120,12 @@ export class OksSqfHoverProvider implements vscode.HoverProvider {
             md.appendMarkdown(p.description);
         }
 
+        // Append function-level docs (notes) if present
+        if (entry.docs) {
+            const docs = entry.docs.trim();
+            md.appendMarkdown(`\n\n---\n\n**Notes:**\n\`\`\`text\n${docs}\n\`\`\``);
+        }
+
         return new vscode.Hover(md);
     }
 

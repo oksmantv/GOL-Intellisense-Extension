@@ -425,6 +425,39 @@
     "usage": "[\"HQ\",\"side\",\"Test\"] spawn OKS_fnc_Chat",
     "docs": ""
   },
+  "OKS_fnc_ChatGlobal": {
+    "category": "OKS_Ambience",
+    "description": "Global wrapper for OKS_fnc_Chat. Handles remoteExec internally so the caller does not need to manage execution locality. Must be called on ONE machine only (server or a single client). Parameters are identical to OKS_fnc_Chat.",
+    "params": [
+      {
+        "name": "_Talker",
+        "type": "Any",
+        "default": "",
+        "description": "Entity (person) or preset callsign string (e.g. \"HQ\")"
+      },
+      {
+        "name": "_Channel",
+        "type": "String",
+        "default": "\"side\"",
+        "description": "Communication channel type (\"side\" or \"local\")"
+      },
+      {
+        "name": "_Message",
+        "type": "String",
+        "default": "",
+        "description": "Message text to display on screen"
+      },
+      {
+        "name": "_Callsign",
+        "type": "String",
+        "default": "\"\"",
+        "description": "Optional callsign override string for the speaker"
+      }
+    ],
+    "returns": "",
+    "usage": "[\"HQ\",\"side\",\"Test\"] spawn OKS_fnc_ChatGlobal",
+    "docs": ""
+  },
   "OKS_fnc_CreateExplosion": {
     "category": "OKS_Ambience",
     "description": "C",
@@ -3348,6 +3381,27 @@
     "usage": "[this] call OKS_fnc_VehicleAppearance",
     "docs": ""
   },
+  "OKS_fnc_SearchLight": {
+    "category": "OKS_Enemy",
+    "description": "Server-only searchlight controller. Accepts an existing vehicle (with or without crew) or a world position. When a position is given the appropriate UK3CB searchlight class is spawned for the side. A gunner is added automatically if the vehicle has none. Exits when the gunner is killed. Applies disableAI, lambs_danger_disableAI, acex_headless_blacklist, and OKS_SearchLight guards each loop iteration.",
+    "params": [
+      {
+        "name": "_SearchlightOrPos",
+        "type": "Any",
+        "default": "ObjNull",
+        "description": "Existing searchlight vehicle (Object) OR a world position array [x,y,z]"
+      },
+      {
+        "name": "_Side",
+        "type": "Side",
+        "default": "east",
+        "description": "Side used to pick the vehicle class and crew unit when spawning. east=UK3CB_O_SearchlightAA_CSAT_B, west=UK3CB_B_SearchlightAA_NATO, independent=UK3CB_I_SearchlightAA_AAF"
+      }
+    ],
+    "returns": "",
+    "usage": "[this, east] spawn OKS_fnc_SearchLight",
+    "docs": ""
+  },
   "OKS_fnc_Suppressed": {
     "category": "OKS_Suppression",
     "description": "Initializes the suppression system on an AI unit by setting threshold/timing variables and a per-frame handler that monitors suppression levels.",
@@ -4012,72 +4066,72 @@
   },
   "OKS_fnc_HuntBase": {
     "category": "OKS_Hunt",
-    "description": "Spawns waves of ground reinforcements from a destructible base object that hunt players detected within a trigger area. Supports configurable respawn timers and wave counts.",
+    "description": "Spawns waves of ground reinforcements from a destructible base object that hunt players detected within a trigger area. Supports infantry groups, single vehicles, random vehicle pools, and multi-vehicle convoys that hunt together in column formation. All logic runs server-side only.",
     "params": [
       {
         "name": "_Base",
         "type": "Object",
         "default": "ObjNull",
-        "description": "Object to check alive state"
+        "description": "Destructible base object. When destroyed, no further waves spawn."
       },
       {
         "name": "_SpawnPos",
         "type": "Object",
         "default": "ObjNull",
-        "description": "Spawn position or object"
+        "description": "Spawn object — units/vehicles spawn here. Face the direction vehicles should drive out."
       },
       {
         "name": "_HuntZone",
         "type": "Object",
         "default": "ObjNull",
-        "description": "Trigger defining the hunt zone for player detection and spawning"
+        "description": "Trigger defining the hunt area. Set to 'Any Players', repeatable."
       },
       {
         "name": "_Waves",
         "type": "Number",
         "default": "0",
-        "description": "Number of attack waves to spawn"
+        "description": "Maximum number of waves (0-999). Scaled by GOL_ForceMultiplier at runtime."
       },
       {
         "name": "_RespawnDelay",
         "type": "Number",
         "default": "0",
-        "description": "Spawn position or object"
+        "description": "Seconds between wave spawns. Scaled by GOL_ResponseMultiplier."
       },
       {
         "name": "_Side",
         "type": "Side",
         "default": "East",
-        "description": "The faction side (east/west/independent/civilian)"
+        "description": "Faction side of spawned units (east / west / independent)."
       },
       {
-        "name": "_Soldiers",
-        "type": "Number",
+        "name": "_SpawnConfig",
+        "type": "Number | String | Array",
         "default": "0",
-        "description": "Vehicle classname to create"
+        "description": "What to spawn each wave. Number = infantry count. String = single vehicle. Array = random pool — each entry is a String (single vehicle) or Array (convoy)."
       },
       {
         "name": "_RefreshRate",
         "type": "Number",
         "default": "0",
-        "description": "How often to check/update in seconds"
+        "description": "Seconds between player detection checks. Lower = faster response, slightly higher cost."
       },
       {
         "name": "_ShouldDeployFlare",
         "type": "Boolean",
         "default": "true",
-        "description": "Whether to should deploy flare"
+        "description": "Fire illumination flares at night when players are detected. Optional."
       },
       {
         "name": "_WaypointBehaviour",
-        "type": "Any",
+        "type": "String",
         "default": "nil",
-        "description": "Waypoint position or object"
+        "description": "AI waypoint behaviour string. Defaults to AWARE for infantry, SAFE for vehicles. Optional."
       }
     ],
     "returns": "",
-    "usage": "[Base Object, SpawnObject, Trigger, Number Of Waves,Respawn Delay,Side,Number of Soldiers / Vehicle Classname,Refresh Rate] spawn OKS_fnc_HuntBase",
-    "docs": ""
+    "usage": "[Base, SpawnPos, HuntZone, Waves, RespawnDelay, Side, SpawnConfig, RefreshRate] spawn OKS_fnc_HuntBase",
+    "docs": "SpawnConfig type reference:\n\n  6\n    Infantry: 6 soldiers in one group\n\n  \"UK3CB_ARD_O_BMP1\"\n    Single vehicle, always this class\n\n  [\"UK3CB_ARD_O_T72BM\", \"UK3CB_ARD_O_T72A\", \"UK3CB_ARD_O_T72B\"]\n    Random pick — one vehicle chosen per wave\n\n  [[\"UK3CB_ARD_O_T72BM\", \"UK3CB_ARD_O_BMP1\"]]\n    Fixed convoy: T72BM leads, BMP1 follows — same group\n\n  [[[\"UK3CB_ARD_O_T72BM\",\"UK3CB_ARD_O_T72A\"], \"UK3CB_ARD_O_BMP1\"]]\n    Convoy: random T72 variant leads, BMP1 follows\n\n  [[\"UK3CB_ARD_O_T72BM\",\"UK3CB_ARD_O_BMP1\"], [\"UK3CB_ARD_O_T72A\",\"UK3CB_ARD_O_BMP2\"]]\n    Random convoy: picks convoy A or convoy B each wave\n\n  [[\"UK3CB_ARD_O_T72BM\",\"UK3CB_ARD_O_BMP1\"], \"UK3CB_ARD_O_Ural_Zu23\"]\n    Mixed pool: each wave either spawns the convoy or a single Zu-23 truck\n\nConvoy rules:\n  - All vehicles placed in one AI group, hunt in COLUMN formation\n  - Vehicles spaced 20 m apart behind the spawn object (aligned to its direction)\n  - Transports (no gunner seats) auto-fill with cargo infantry (capped by GOL_MaxCargoSeats)\n  - Within a convoy, each position can be a String (fixed) or Array of strings (random slot)"
   },
   "OKS_fnc_HuntRun": {
     "category": "OKS_Hunt",
@@ -5714,7 +5768,7 @@
         "name": "_FlightBehaviour",
         "type": "String",
         "default": "\"STEALTH\"",
-        "description": "Flight behavior mode"
+        "description": "Flight behavior mode. \"COMBAT\" allows active engagement with enemies; helicopter still proceeds to endpoint when not engaged, then returns and despawns. Other modes hold fire (defend only)."
       },
       {
         "name": "_ShouldLoop",
