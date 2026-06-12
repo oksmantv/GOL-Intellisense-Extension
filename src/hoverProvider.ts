@@ -157,14 +157,31 @@ export class OksSqfHoverProvider implements vscode.HoverProvider {
 export function findLastUnmatchedBracket(text: string): number {
     // Stack of positions of unmatched '['
     const stack: number[] = [];
+    let inString = false;
     for (let i = 0; i < text.length; i++) {
-        if (text[i] === '[') {
+        const ch = text[i];
+
+        if (ch === '"') {
+            // SQF escapes quotes in strings as "".
+            if (inString && i + 1 < text.length && text[i + 1] === '"') {
+                i++;
+                continue;
+            }
+            inString = !inString;
+            continue;
+        }
+
+        if (inString) {
+            continue;
+        }
+
+        if (ch === '[') {
             stack.push(i);
-        } else if (text[i] === ']') {
+        } else if (ch === ']') {
             if (stack.length > 0) {
                 stack.pop();
             }
-        } else if (text[i] === ';' && stack.length === 0) {
+        } else if (ch === ';' && stack.length === 0) {
             // Statement boundary at bracket depth 0 — brackets before
             // this point belong to a prior statement and are irrelevant.
             // (Stack is already empty for well-formed code, but clear
@@ -186,10 +203,26 @@ export function findLastUnmatchedBracket(text: string): number {
 export function textFromCurrentStatement(text: string): string {
     let depth = 0;
     let lastBoundary = 0;
+    let inString = false;
     for (let i = 0; i < text.length; i++) {
-        if (text[i] === '[') { depth++; }
-        else if (text[i] === ']') { if (depth > 0) { depth--; } }
-        else if (text[i] === ';' && depth === 0) {
+        const ch = text[i];
+
+        if (ch === '"') {
+            if (inString && i + 1 < text.length && text[i + 1] === '"') {
+                i++;
+                continue;
+            }
+            inString = !inString;
+            continue;
+        }
+
+        if (inString) {
+            continue;
+        }
+
+        if (ch === '[') { depth++; }
+        else if (ch === ']') { if (depth > 0) { depth--; } }
+        else if (ch === ';' && depth === 0) {
             lastBoundary = i + 1;
         }
     }
@@ -203,10 +236,26 @@ export function textFromCurrentStatement(text: string): string {
  */
 export function textUntilStatementEnd(text: string): string {
     let depth = 0;
+    let inString = false;
     for (let i = 0; i < text.length; i++) {
-        if (text[i] === '[') { depth++; }
-        else if (text[i] === ']') { if (depth > 0) { depth--; } }
-        else if (text[i] === ';' && depth === 0) {
+        const ch = text[i];
+
+        if (ch === '"') {
+            if (inString && i + 1 < text.length && text[i + 1] === '"') {
+                i++;
+                continue;
+            }
+            inString = !inString;
+            continue;
+        }
+
+        if (inString) {
+            continue;
+        }
+
+        if (ch === '[') { depth++; }
+        else if (ch === ']') { if (depth > 0) { depth--; } }
+        else if (ch === ';' && depth === 0) {
             return text.substring(0, i);
         }
     }
@@ -220,9 +269,25 @@ export function textUntilStatementEnd(text: string): string {
 export function countCommasAtDepthZero(text: string): number {
     let count = 0;
     let depth = 0;
-    for (const ch of text) {
+    let inString = false;
+    for (let i = 0; i < text.length; i++) {
+        const ch = text[i];
+
+        if (ch === '"') {
+            if (inString && i + 1 < text.length && text[i + 1] === '"') {
+                i++;
+                continue;
+            }
+            inString = !inString;
+            continue;
+        }
+
+        if (inString) {
+            continue;
+        }
+
         if (ch === '[') { depth++; }
-        else if (ch === ']') { depth--; }
+        else if (ch === ']') { if (depth > 0) { depth--; } }
         else if (ch === ',' && depth === 0) { count++; }
     }
     return count;

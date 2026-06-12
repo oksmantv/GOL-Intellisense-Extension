@@ -394,7 +394,7 @@
   },
   "OKS_fnc_Chat": {
     "category": "OKS_Ambience",
-    "description": "Local Execution - Requires to be run on all Clients (Globally) to show everyone a message.",
+    "description": "Local execution function for chat display. This function must execute on each client that should see the message. Use OKS_fnc_ChatGlobal when calling from server/single machine.",
     "params": [
       {
         "name": "_Talker",
@@ -419,15 +419,33 @@
         "type": "String",
         "default": "\"\"",
         "description": "Optional callsign override string for the speaker"
+      },
+      {
+        "name": "_RadioRange",
+        "type": "Number",
+        "default": "25000",
+        "description": "Range in meters used by side channel when talker is an object"
+      },
+      {
+        "name": "_LocalRange",
+        "type": "Number",
+        "default": "20",
+        "description": "Range in meters used by local channel"
+      },
+      {
+        "name": "_TargetSide",
+        "type": "Side",
+        "default": "sideUnknown",
+        "description": "Optional recipient side filter (west/east/independent/civilian). sideUnknown means no side filtering"
       }
     ],
     "returns": "",
-    "usage": "[\"HQ\",\"side\",\"Test\"] spawn OKS_fnc_Chat",
+    "usage": "[\"HQ\",\"side\",\"Test\",\"\",25000,20,west] remoteExec [\"OKS_fnc_Chat\",0]",
     "docs": ""
   },
   "OKS_fnc_ChatGlobal": {
     "category": "OKS_Ambience",
-    "description": "Global wrapper for OKS_fnc_Chat. Handles remoteExec internally so the caller does not need to manage execution locality. Must be called on ONE machine only (server or a single client). Parameters are identical to OKS_fnc_Chat.",
+    "description": "Global wrapper for OKS_fnc_Chat. Handles remoteExec internally so caller can run it on one machine. Parameters are identical to OKS_fnc_Chat.",
     "params": [
       {
         "name": "_Talker",
@@ -452,10 +470,28 @@
         "type": "String",
         "default": "\"\"",
         "description": "Optional callsign override string for the speaker"
+      },
+      {
+        "name": "_RadioRange",
+        "type": "Number",
+        "default": "25000",
+        "description": "Range in meters used by side channel when talker is an object"
+      },
+      {
+        "name": "_LocalRange",
+        "type": "Number",
+        "default": "20",
+        "description": "Range in meters used by local channel"
+      },
+      {
+        "name": "_TargetSide",
+        "type": "Side",
+        "default": "sideUnknown",
+        "description": "Optional recipient side target for remoteExec (west/east/independent/civilian). sideUnknown means broadcast to all"
       }
     ],
     "returns": "",
-    "usage": "[\"HQ\",\"side\",\"Test\"] spawn OKS_fnc_ChatGlobal",
+    "usage": "[\"CDF Command\",\"side\",\"Message\",\"CDF Command\",25000,20,independent] spawn OKS_fnc_ChatGlobal",
     "docs": ""
   },
   "OKS_fnc_CreateExplosion": {
