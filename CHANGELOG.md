@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.12 — 2026-06-15
+
+- Repackaged release for Marketplace update
+
 ## 0.1.11 — 2026-06-13
 
 - Fixed signature help parameter indexing for calls containing commas inside string literals

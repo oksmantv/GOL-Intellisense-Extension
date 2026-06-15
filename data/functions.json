@@ -169,7 +169,7 @@
         "name": "_UnloadOrDrop",
         "type": "String",
         "default": "\"unload\"",
-        "description": "Unload mode: \"unload\" or \"drop\""
+        "description": "Insertion mode: \"unload\", \"paradrop\", or \"fastrope\". Legacy \"drop\" is accepted as an alias for \"paradrop\""
       },
       {
         "name": "_Ingress",
@@ -181,7 +181,7 @@
         "name": "_UnloadOrDropMarker",
         "type": "String",
         "default": "\"\"",
-        "description": "Unload/drop marker name or position"
+        "description": "Insertion target marker name or position"
       },
       {
         "name": "_Egress",
@@ -221,7 +221,7 @@
       }
     ],
     "returns": "",
-    "usage": "[side, \"heli type\", Search and Destroy or Egress and despawn, \"unload/paradrop\", \"Spawn position\", \"unload/paradrop position\", \"Egress/SAD position\", [number of groups, % of cargo to be filled], [\"unit waypoints\", \"last waypoint SAD\"], override] spawn OKS_fnc_Airdrop",
+    "usage": "[side, \"heli type\", Search and Destroy or Egress and despawn, \"unload/paradrop/fastrope\", \"Spawn position\", \"insertion target position\", \"Egress/SAD position\", [number of groups, % of cargo to be filled], [\"unit waypoints\", \"last waypoint SAD\"], override] spawn OKS_fnc_AirDrop",
     "docs": ""
   },
   "OKS_fnc_AirDropAISkill": {
@@ -6063,6 +6063,12 @@
         "type": "String",
         "default": "\"BOMB\"",
         "description": "Munition type: \"BOMB\" or \"CLUSTER\""
+      },
+      {
+        "name": "_bombCount",
+        "type": "Number",
+        "default": "1",
+        "description": "Number of guided bombs in the carpet sequence (BOMB mode only, 1-8)"
       }
     ],
     "returns": "",
