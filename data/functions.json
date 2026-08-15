@@ -7115,11 +7115,38 @@
         "type": "Array",
         "default": "nil",
         "description": "Optional convoy task: [taskParent (string), showPosition (bool), showNotification (bool), taskCondition (string: 'destroy'|'intercept')]. Omit or pass nil for no task."
+      },
+      {
+        "name": "_FlankingRoute",
+        "type": "Array",
+        "default": "[]",
+        "description": "Optional. Array of positions, objects, or markers infantry walks after dismounting before their task fires. Armed vehicles escort the infantry via OKS_fnc_VehicleAttachSquad and wait for infantry arrival before their own task fires. Entry types per element: Object (getPos), String (markerPos), Array (direct position). Empty array skips flanking entirely. Fully backwards compatible."
       }
     ],
     "returns": "",
     "returns": "String — Pre-generated BIS task ID when param 12 (_TaskArray) is provided, \"\" otherwise. Task is created in the convoy execution thread once vehicles spawn. Call with: private _taskId = [convoy_1,...] call OKS_fnc_Convoy_Spawn; then poll: waitUntil { sleep 5; taskState _taskId in [\"SUCCEEDED\",\"FAILED\"] }; taskState returns \"\" until the task is created — safe to poll from the start. Old spawn calls remain backward compatible (return value discarded).",
-    "usage": "private _taskId = [convoy_1,convoy_2,convoy_3,east,[4,[\"rhs_btr60_msv\"], 6, 25],[true,6],[], false, false, [\"rush\"], \"alternate\", [\"\", true, true, \"destroy\"]] call OKS_fnc_Convoy_Spawn",
+    "usage": "// With task and flanking route:\nprivate _taskId = [convoy_1,convoy_2,convoy_3,east,[4,[\"rhs_btr60_msv\"], 6, 25],[true,6],[], false, false, [\"rush\"], \"alternate\", [\"\", true, true, \"destroy\"], [flank_obj_1, \"flank_marker\", [1234,5678,0]]] call OKS_fnc_Convoy_Spawn;\n// Flanking route only (no task):\n[convoy_1,convoy_2,convoy_3,east,[4,[\"rhs_btr60_msv\"], 6, 25],[true,6],[], false, false, [\"hunt\"], \"alternate\", nil, [flank_obj_1]] spawn OKS_fnc_Convoy_Spawn",
+    "docs": ""
+  },
+  "OKS_fnc_VehicleAttachSquad": {
+    "category": "OKS_Spawn_Convoy_ConvoyHelper",
+    "description": "Attaches a vehicle to an infantry group, dynamically escorting them. The vehicle tracks the group leader every 8 seconds. When the leader is in forest terrain the vehicle moves to the nearest open position (nearest road preferred within 200m, then spiral search outward at 20-100m). If no open position is found (pure forest) the escort aborts and the vehicle proceeds to its task. Stops when OKS_VehicleAttachSquad_Active is set false, the vehicle or group is dead, or the vehicle is >500m from the infantry. Sets OKS_Convoy_EscortEnded=true on the vehicle on any exit. Used internally by OKS_fnc_Convoy_DismountAndTaskCode for the flanking route system but can be called standalone.",
+    "params": [
+      {
+        "name": "_vehicle",
+        "type": "Object",
+        "default": "",
+        "description": "The armed vehicle to escort with"
+      },
+      {
+        "name": "_group",
+        "type": "Group",
+        "default": "",
+        "description": "The infantry group to follow"
+      }
+    ],
+    "returns": "Nothing. Sets OKS_Convoy_EscortEnded=true on vehicle when loop exits.",
+    "usage": "[myVehicle, myInfantryGroup] spawn OKS_fnc_VehicleAttachSquad;\n// Stop externally:\nmyVehicle setVariable [\"OKS_VehicleAttachSquad_Active\", false, true];",
     "docs": ""
   },
   "OKS_fnc_Convoy_AAMergeGapHandler": {
@@ -9685,6 +9712,66 @@
     "usage": "",
     "docs": ""
   },
+  "OKS_fnc_AddSearchIntelAction": {
+    "category": "OKS_Tasks",
+    "description": "Attaches a GOL 'Search for Intel' ACE interact action to a non-ACE-document object. Called automatically by OKS_fnc_SetupIntel for Man/prop/vehicle intel pieces. Safe to call on server or client — remoteExecs to all clients if run on a headless server.",
+    "params": [
+      {
+        "name": "_intelPiece",
+        "type": "Object",
+        "default": "objNull",
+        "description": "The object to receive the search action"
+      },
+      {
+        "name": "_actionTitle",
+        "type": "String",
+        "default": "\"Search for Intel\"",
+        "description": "ACE interact action label shown to players (e.g. \"Download Harddrive\", \"Search Documents\")"
+      }
+    ],
+    "returns": "Boolean — true on success, false on failure",
+    "usage": "[intel_prop, \"Download Harddrive\"] call OKS_fnc_AddSearchIntelAction",
+    "docs": ""
+  },
+  "OKS_fnc_AddMultipleSearchIntelActions": {
+    "category": "OKS_Tasks",
+    "description": "Assigns intel to a random subset of the provided objects; remaining objects become silent decoys. Spawns OKS_fnc_SetupIntel for each real intel piece and a no-text SetupIntel for each decoy. Server-only.",
+    "params": [
+      {
+        "name": "_PossibleIntelObjects",
+        "type": "Array",
+        "default": "[]",
+        "description": "Array of all candidate objects. A random subset (size = count _TaskDataArray) will receive real intel; the rest become decoys."
+      },
+      {
+        "name": "_TaskDataArray",
+        "type": "Array",
+        "default": "[]",
+        "description": "Array of per-intel-piece entry arrays. Each entry: [Target, CustomText, CustomHeader, CustomDetails, MarkerArray, CustomActionTitle]. Count must not exceed count _PossibleIntelObjects."
+      },
+      {
+        "name": "_AddCollectTask",
+        "type": "Boolean",
+        "default": "true",
+        "description": "If true, collecting intel creates/completes a task"
+      },
+      {
+        "name": "_ShowTaskPosition",
+        "type": "Boolean",
+        "default": "true",
+        "description": "If true, the task position marker is shown on the map when assigned"
+      },
+      {
+        "name": "_ParentTask",
+        "type": "String",
+        "default": "\"\"",
+        "description": "Parent task ID — intel tasks are created as subtasks of this task"
+      }
+    ],
+    "returns": "",
+    "usage": "[[obj1,obj2,obj3,obj4,obj5],[[objNull,\"Intel text\",\"Header 1\",\"\",[\"marker1\"],\"Download Harddrive\"],[objNull,\"Intel text\",\"Header 2\",\"\",[\"marker2\"],\"Search Documents\"]],true,true,\"parentTaskID\"] spawn OKS_fnc_AddMultipleSearchIntelActions",
+    "docs": ""
+  },
   "OKS_fnc_SetupIntel": {
     "category": "OKS_Tasks",
     "description": "Sets up ACE intel documents with optional target tracking, custom text, and task completion. When players interact with the intel object, it reveals targets and can auto-complete parent tasks.",
@@ -9742,10 +9829,16 @@
         "type": "Boolean",
         "default": "true",
         "description": "BOOL - Show the intel position as a task map marker while ASSIGNED. Set false when the intel is on a vehicle that hasn't moved yet to avoid revealing its location"
+      },
+      {
+        "name": "_CustomActionTitle",
+        "type": "String",
+        "default": "\"Search for Intel\"",
+        "description": "Custom ACE interact action label shown on the object (e.g. \"Download Harddrive\", \"Search Documents\"). Defaults to \"Search for Intel\"."
       }
     ],
     "returns": "",
-    "usage": "[intel_1,nil,nil,\"Testing Testing Testing\\n\\nTesting Testing Testing\\nSigned Hello\",\"Special Intel\",nil,true,[],false] spawn OKS_fnc_SetupIntel",
+    "usage": "[intel_1,nil,nil,\"Testing Testing Testing\\n\\nTesting Testing Testing\\nSigned Hello\",\"Special Intel\",nil,true,[],false,\"Download Harddrive\"] spawn OKS_fnc_SetupIntel",
     "docs": ""
   },
   "OKS_fnc_Task_Settings": {
@@ -10728,13 +10821,13 @@
   },
   "OKS_fnc_InterceptHvtTask": {
     "category": "OKS_Tasks",
-    "description": "Spawns an HVT with guard detail, delays departure, mounts into a vehicle if possible, and creates an intercept task. Supports capture or capture-or-kill mode and optional extraction-site completion.",
+    "description": "Spawns an HVT with guard detail, inserts all units directly into convoy vehicles, and creates an intercept task. Supports capture or capture-or-kill mode and optional extraction-site completion.",
     "params": [
       {
         "name": "_spawnPos",
         "type": "Array|Object",
         "default": "[0,0,0]",
-        "description": "HVT anchor spawn position. HVT spawns exactly here; guards may be placed in nearest building."
+        "description": "HVT anchor spawn position used for initial spawn and fallback vehicle search radius center."
       },
       {
         "name": "_endPos",
@@ -10756,15 +10849,15 @@
       },
       {
         "name": "_designatedVehicle",
-        "type": "Object",
+        "type": "Object|Array",
         "default": "objNull",
-        "description": "Optional transport vehicle. If null/invalid, a nearby valid vehicle is selected."
+        "description": "Optional transport input. Object = legacy single main vehicle. Array = ordered convoy vehicles [mainVehicle, overflowVehicle1, overflowVehicle2, ...]. Invalid/missing entries fall back to nearby valid vehicles."
       },
       {
         "name": "_delay",
         "type": "Number|Array",
         "default": "180",
-        "description": "Seconds before departure, or [min,max] random range."
+        "description": "Escort follow delay in seconds, or [min,max] random range. The main HVT vehicle moves immediately; overflow/escort vehicles wait this long before trailing behind it."
       },
       {
         "name": "_guardData",
@@ -10792,7 +10885,7 @@
       }
     ],
     "returns": "OBJECT - Spawned HVT unit, or objNull on failure",
-    "usage": "[getPosATL SpawnLogic, getPosATL EndLogic, [east,east], \"GARRISON\", objNull, [120,240], [8,30,60], [true,\"MainTask\",true,\"\"], true, nil] call OKS_fnc_InterceptHvtTask",
+    "usage": "[getPosATL SpawnLogic, getPosATL EndLogic, [east,east], \"GARRISON\", [vehMain, vehEscort1, vehEscort2], [120,240], [8,30,60], [true,\"MainTask\",true,\"\"], true, nil] call OKS_fnc_InterceptHvtTask",
     "docs": ""
   },
   "OKS_fnc_RescueSurvivorTask": {

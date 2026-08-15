@@ -2,7 +2,7 @@
   "name": "oks-sqf",
   "displayName": "OKS SQF — GOL Framework IntelliSense",
   "description": "Hover tooltips, parametnger hints, and autocomplete for OKS/GOL SQF framework functions.",
-  "version": "0.1.12",
+  "version": "0.1.14",
   "publisher": "oksmantv",
   "license": "SEE LICENSE IN LICENSE",
   "icon": "Hellfish.png",
@@ -47,7 +47,7 @@
   "devDependencies": {
     "@types/node": "^18.0.0",
     "@types/vscode": "^1.80.0",
-    "@vscode/vsce": "2.15.0",
+    "@vscode/vsce": "^2.22.0",
     "typescript": "^5.3.0",
     "vsce": "2.15.0"
   }
